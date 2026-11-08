@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}My Schedule{% endblock %}
+{% block content %}
+<h1 class="page-title">{{ icon('clock', 24) }} My Weekly Schedule</h1>
+<div class="card">
+    <p class="hint">Tick the days you work and set your hours. Patients can only book 30-minute slots inside these hours.</p>
+    <form method="post" action="{{ url_for('doctor_schedule') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        {% for row in rows %}
+        <div class="schedule-row">
+            <label><input type="checkbox" name="works_{{ row.index }}" value="1" {{ 'checked' if row.works }}> {{ row.name }}</label>
+            <select name="start_{{ row.index }}">
+                {% for t in times %}<option value="{{ t }}" {{ 'selected' if t == row.start }}>{{ t }}</option>{% endfor %}
+            </select>
+            <span class="muted">to</span>
+            <select name="end_{{ row.index }}">
+                {% for t in times %}<option value="{{ t }}" {{ 'selected' if t == row.end }}>{{ t }}</option>{% endfor %}
+            </select>
+        </div>
+        {% endfor %}
+        <div class="actions" style="margin-top:16px"><button class="btn" type="submit">{{ icon('check', 16) }} Save Schedule</button></div>
+    </form>
+</div>
+{% endblock %}

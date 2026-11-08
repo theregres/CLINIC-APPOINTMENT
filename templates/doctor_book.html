@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% import "_calendar.html" as cals with context %}
+{% from "_ui.html" import booking_steps, person_chip, service_chip, empty_state %}
+{% from "_booking.html" import slot_picker %}
+{% block title %}Book for Patient{% endblock %}
+{% block content %}
+<h1 class="page-title">{{ icon('plus-circle', 24) }} Book for Patient</h1>
+{{ booking_steps(1 if not patient else (3 if selected else 2), ['Patient', 'Date', 'Time', 'Confirm']) }}
+{% if not patient %}
+<div class="card">
+    <h2>Choose a patient</h2>
+    <form method="get" action="{{ url_for('doctor_book') }}" class="inline-form">
+        <label style="max-width:360px">Search by name, username or ID
+            <input type="text" name="q" value="{{ query }}" placeholder="e.g. Cruz or 000-004" autofocus>
+        </label>
+        <button class="btn" type="submit">{{ icon('search', 16) }} Search</button>
+    </form>
+    {% if results %}
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Patient</th><th>Username</th><th></th></tr></thead>
+            <tbody>
+                {% for username, name, no in results %}
+                <tr>
+                    <td>{{ person_chip(name) }}</td>
+                    <td>{{ username }}</td>
+                    <td class="actions"><a class="btn small" href="{{ url_for('doctor_book', patient=username) }}">Select {{ icon('arrow-right', 15) }}</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        {{ empty_state('users', 'No patients found', 'Try another name, username or ID. Patients must have an account.') }}
+    {% endif %}
+</div>
+{% else %}
+<div class="card">
+    <h2>Patient</h2>
+    <p>{{ person_chip(patient[1]) }}</p>
+    <form method="get" action="{{ url_for('doctor_book') }}">
+        <input type="hidden" name="patient" value="{{ patient[0] }}">
+        {% if specializations|length > 1 %}
+        <label style="max-width:320px">Service
+            <select name="service" onchange="this.form.submit()">
+                {% for item in specializations %}<option value="{{ item }}" {{ 'selected' if item == service }}>{{ item }}</option>{% endfor %}
+            </select>
+        </label>
+        {% else %}<p>{{ service_chip(service) }}</p>{% endif %}
+        <p class="hint">The appointment is booked on your own calendar. The patient is notified and can cancel or reschedule it.</p>
+        <a class="btn secondary" href="{{ url_for('doctor_book') }}">{{ icon('chevron-left', 16) }} Choose another patient</a>
+    </form>
+</div>
+<div class="card">
+    <h2>Pick a date and time</h2>
+    <div class="booking">
+        <div>
+            {{ cals.render(cal) }}
+            <div class="legend"><span class="l-free">Available</span><span class="l-selected">Selected</span><span class="l-off">Unavailable</span></div>
+        </div>
+        <div>
+            {% if selected %}
+                <h2>{{ icon('clock', 18) }} Times on {{ selected|pretty_date }}</h2>
+                <form method="post" action="{{ url_for('doctor_book') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="patient" value="{{ patient[0] }}">
+                    <input type="hidden" name="service" value="{{ service }}">
+                    <input type="hidden" name="date" value="{{ selected }}">
+                    {{ slot_picker(slots, selected, [('Patient', patient[1] ~ ' (' ~ (patient[2]|acct_no) ~ ')'), ('Service', service), ('Doctor', session.name|doctor_label)], 'Confirm booking') }}
+                </form>
+            {% else %}
+                <p class="muted">Pick a highlighted date on the calendar to see your free times.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

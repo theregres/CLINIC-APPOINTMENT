@@ -1,0 +1,21 @@
+<label>Username
+    <input type="text" name="username" value="{{ form.get('username', '') }}" autocomplete="username" required>
+</label>
+<label>Email
+    <input type="email" name="email" value="{{ form.get('email', '') }}" autocomplete="email" required>
+</label>
+<label>Password
+    <input type="password" name="password" id="password" autocomplete="new-password" data-pw-rules maxlength="12" pattern=".*[0-9].*" title="Up to 12 characters, with at least one number" required>
+    <span class="hint pw-hint" style="display:block;margin:4px 0 0;font-weight:400">Up to 12 characters, at least 1 number.</span>
+</label>
+<label>Confirm Password
+    <input type="password" name="confirm_password" id="confirm_password" autocomplete="new-password" maxlength="12" required>
+</label>
+<script>
+(function () {
+    var p = document.getElementById('password'), c = document.getElementById('confirm_password');
+    function check() { c.setCustomValidity(c.value && p.value !== c.value ? 'Passwords do not match' : ''); }
+    p.addEventListener('input', check);
+    c.addEventListener('input', check);
+})();
+</script>

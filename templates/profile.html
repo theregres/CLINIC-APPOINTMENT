@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Profile{% endblock %}
+{% block content %}
+<div class="page-narrow">
+<h1 class="page-title">{{ icon('user', 24) }} Profile</h1>
+<div class="card">
+    <div class="avatar-block">
+        {% if session.avatar_v %}
+            <img class="avatar-lg" src="{{ url_for('avatar', v=session.avatar_v) }}" alt="Your profile picture">
+        {% else %}
+            <span class="avatar-lg">{{ (info.name or '?')[0]|upper }}</span>
+        {% endif %}
+        <div>
+            <form method="post" action="{{ url_for('upload_avatar') }}" enctype="multipart/form-data" class="avatar-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="file" name="avatar" accept="image/png,image/jpeg,image/gif,image/webp" required>
+                <button class="btn small" type="submit">{{ icon('camera', 15) }} {{ 'Change picture' if session.avatar_v else 'Upload picture' }}</button>
+            </form>
+            <p class="hint">PNG, JPG, GIF or WebP, up to 2 MB.</p>
+            {% if session.avatar_v %}
+            <form method="post" action="{{ url_for('remove_avatar') }}" class="inline-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button class="btn small danger" type="submit">{{ icon('trash', 14) }} Remove picture</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+    <dl class="profile">
+        <dt>Name</dt><dd>{{ info.name }}</dd>
+        {% if info.account_no %}<dt>Account ID</dt><dd><span class="acct-id">{{ info.account_no|acct_no }}</span></dd>{% endif %}
+        <dt>Username</dt><dd>{{ info.username }}</dd>
+        <dt>Role</dt><dd>{{ {'admin': 'Administrator', 'patient': 'Patient', 'doctor': 'Doctor'}[info.role] }}</dd>
+        {% if info.email %}<dt>Email</dt><dd>{{ info.email }}</dd>{% endif %}
+        {% if info.role == 'doctor' %}<dt>Specialization</dt><dd>{{ info.specializations|join(', ') }}</dd>{% endif %}
+    </dl>
+    <div class="actions" style="margin-top:16px">
+        <a class="btn secondary" href="{{ url_for('settings') }}">{{ icon('sliders', 16) }} Settings</a>
+    </div>
+</div>
+</div>
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% from "_ui.html" import doctor_chip, person_chip, service_chip, status_chip, reason_line, action_button, empty_state %}
+{% block title %}Appointments{% endblock %}
+{% macro sort_header(key, label) %}
+<th><a href="{{ url_for('admin_appointments', q=q, sort=key, dir=('desc' if sort == key and direction == 'asc' else 'asc')) }}">{{ label }}{% if sort == key %} {{ '&#9650;'|safe if direction == 'asc' else '&#9660;'|safe }}{% endif %}</a></th>
+{% endmacro %}
+{% block content %}
+<h1 class="page-title">{{ icon('calendar', 24) }} Appointments</h1>
+<div class="card">
+    <form method="get" action="{{ url_for('admin_appointments') }}" class="actions">
+        <span class="search-box">{{ icon('search', 16) }}<input type="search" name="q" value="{{ q }}" placeholder="Search patient, doctor, service or ID"></span>
+        <input type="hidden" name="sort" value="{{ sort }}">
+        <input type="hidden" name="dir" value="{{ direction }}">
+        <button class="btn" type="submit">{{ icon('search', 16) }} Search</button>
+        {% if q %}<a class="btn secondary" href="{{ url_for('admin_appointments') }}">{{ icon('x', 16) }} Clear</a>{% endif %}
+        <a class="btn" style="margin-left:auto" href="{{ url_for('admin_new_appointment') }}">{{ icon('plus', 16) }} New Appointment</a>
+    </form>
+</div>
+<div class="card">
+    {% if records %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    {{ sort_header('id', 'ID') }}
+                    {{ sort_header('patient', 'Patient Name') }}
+                    {{ sort_header('doctor', 'Doctor') }}
+                    {{ sort_header('service', 'Service') }}
+                    {{ sort_header('datetime', 'Date/Time') }}
+                    <th>Reason</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in records %}
+                <tr class="{{ 'row-dim' if record.status in ('cancelled', 'no_show') }}">
+                    <td>{{ record.record_id }}</td>
+                    <td>{{ person_chip(record.patient_name) }}</td>
+                    <td>{{ doctor_chip(record.doctor) }}</td>
+                    <td>{{ service_chip(record.service) }}</td>
+                    <td class="nowrap">{{ record.datetime_str|pretty_datetime }}</td>
+                    <td>{{ reason_line(record) }}</td>
+                    <td>{{ status_chip(record) }}</td>
+                    <td class="actions">
+                        {% if record.status == 'scheduled' %}
+                        <a class="btn small secondary" href="{{ url_for('admin_edit_appointment', rid=record.record_id) }}" title="Edit" aria-label="Edit">{{ icon('pencil', 14) }}<span class="lbl"> Edit</span></a>
+                        {% if can_mark_done(record) %}
+                        {{ action_button('admin_set_status', record, 'completed', 'check-circle', 'Complete') }}
+                        {{ action_button('admin_set_status', record, 'no_show', 'user-x', 'No-show', 'secondary', 'Mark as a no-show?') }}
+                        {% endif %}
+                        {{ action_button('admin_set_status', record, 'cancelled', 'x-circle', 'Cancel', 'secondary', 'Cancel appointment ' ~ record.record_id ~ '? The patient will be emailed.') }}
+                        {% endif %}
+                        <form class="inline-form" method="post" action="{{ url_for('admin_delete_appointment') }}" onsubmit="return confirm('Delete appointment {{ record.record_id }}?')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <input type="hidden" name="rid" value="{{ record.record_id }}">
+                            <button class="btn small danger" type="submit" title="Delete" aria-label="Delete">{{ icon('trash', 14) }}<span class="lbl"> Delete</span></button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    {% if q %}{{ empty_state('search', 'No matches', 'Nothing matched "' ~ q ~ '". Try a different search.') }}
+    {% else %}{{ empty_state('calendar', 'No appointments yet', 'Create the first appointment to get started.', url_for('admin_new_appointment'), 'New appointment') }}{% endif %}
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% from "_ui.html" import stat, service_chip, doctor_chip, row_actions, empty_state %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="hero">
+    <h1 class="page-title">{{ icon('layout', 24) }} Dashboard</h1>
+    <p>Hello, {{ session.name }}. Here is a quick look at your care.</p>
+</div>
+<div class="stats">
+    {{ stat('clock', upcoming_count, 'Upcoming appointments', '', url_for('patient_appointments')) }}
+    {{ stat('check-circle', past_count, 'Past appointments', '', url_for('patient_appointments')) }}
+    {{ stat('plus-circle', 'Book', 'Schedule a new visit', 'cta', url_for('patient_book')) }}
+</div>
+<div class="card">
+    <div class="card-head"><h2>Your next appointment</h2></div>
+    {% if upcoming %}
+    {% set nxt = upcoming[0] %}
+    <div class="next-appt">
+        <div class="next-date">
+            <span>{{ nxt.datetime_str[:10]|pretty_md }}</span>
+            <strong>{{ nxt.datetime_str[11:]|time12 }}</strong>
+        </div>
+        <div>
+            <div class="next-line">{{ doctor_chip(nxt.doctor) }}</div>
+            <div class="next-line">{{ service_chip(nxt.service) }} <span class="muted">{{ nxt.datetime_str|pretty_datetime }}</span></div>
+            {% if nxt.reason %}<div class="next-line muted">{{ icon('message', 14) }} {{ nxt.reason }}</div>{% endif %}
+            <div class="muted next-line">Reference {{ nxt.record_id }}</div>
+            <div class="actions next-line">{{ row_actions(nxt) }}</div>
+        </div>
+    </div>
+    {% else %}
+        {{ empty_state('calendar', 'No upcoming appointments', 'Book a visit with one of our doctors in a few clicks.', url_for('patient_book'), 'Book an appointment') }}
+    {% endif %}
+</div>
+{% if upcoming|length > 1 %}
+<div class="card">
+    <div class="card-head"><h2>Also coming up</h2><a class="btn small secondary" href="{{ url_for('patient_appointments') }}">View all {{ icon('arrow-right', 15) }}</a></div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Date/Time</th><th>Doctor</th><th>Service</th></tr></thead>
+            <tbody>
+                {% for r in upcoming[1:] %}
+                <tr><td class="nowrap">{{ r.datetime_str|pretty_datetime }}</td><td>{{ doctor_chip(r.doctor) }}</td><td>{{ service_chip(r.service) }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

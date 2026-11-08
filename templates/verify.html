@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Verify Email{% endblock %}
+{% block content %}
+<div class="card auth-card">
+    <div class="logo-badge">{% include "_logo.html" %}</div>
+    <h1>Verify your email</h1>
+    <p class="hint">Enter the 6-digit code we sent to <strong>{{ email }}</strong>.</p>
+    <form method="post" action="{{ url_for('verify') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label>Verification code
+            <input type="text" name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required autofocus>
+        </label>
+        <button class="btn" type="submit">Verify</button>
+    </form>
+    <hr style="border:0;border-top:1px solid var(--border);margin:20px 0">
+    <div class="actions">
+        <form method="post" action="{{ url_for('verify_resend') }}" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button class="btn secondary" type="submit">Resend code</button>
+        </form>
+        <a class="btn secondary" href="{{ url_for('login') }}">Back to Login</a>
+    </div>
+</div>
+{% endblock %}

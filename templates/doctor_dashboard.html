@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% from "_ui.html" import stat, service_chip, status_chip, person_chip, row_actions, empty_state %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="hero">
+    <h1 class="page-title">{{ icon('layout', 24) }} Dashboard</h1>
+    <p>Good to see you, {{ session.name|doctor_label }}.</p>
+</div>
+<div class="stats">
+    {{ stat('calendar', today|length, "Today's appointments", '', url_for('doctor_appointments')) }}
+    {{ stat('clock', upcoming_count, 'Upcoming appointments', '', url_for('doctor_appointments')) }}
+    {{ stat('check-circle', completed_count, 'Completed appointments') }}
+</div>
+<div class="card">
+    <div class="card-head"><h2>Today</h2><a class="btn small secondary" href="{{ url_for('doctor_appointments') }}">All appointments {{ icon('arrow-right', 15) }}</a></div>
+    {% if today %}
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Time</th><th>Patient</th><th>Service</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>
+                {% for r in today %}
+                <tr><td>{{ r.datetime_str[11:]|time12 }}</td><td>{{ person_chip(r.patient_name) }}</td><td>{{ service_chip(r.service) }}</td><td>{{ status_chip(r) }}</td><td class="actions">{{ row_actions(r, 'dashboard') }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        {{ empty_state('calendar-check', 'A free day', 'You have no appointments today.') }}
+    {% endif %}
+</div>
+<div class="grid-2">
+    <div class="card">
+        <div class="card-head"><h2>Up next</h2></div>
+        {% if upcoming %}
+        <ul class="plain-list">
+            {% for r in upcoming %}
+            <li>{{ person_chip(r.patient_name) }}<span class="muted">{{ r.datetime_str|pretty_datetime }}</span></li>
+            {% endfor %}
+        </ul>
+        {% else %}<p class="muted">No upcoming appointments.</p>{% endif %}
+    </div>
+    <div class="card">
+        <div class="card-head"><h2>Your practice</h2></div>
+        <p class="muted" style="margin-top:0">Specializations</p>
+        <p>{% for s in specializations %}{{ service_chip(s) }} {% endfor %}</p>
+        <div class="actions" style="margin-top:14px">
+            <a class="btn small" href="{{ url_for('doctor_schedule') }}">{{ icon('clock', 15) }} Weekly schedule</a>
+            <a class="btn small secondary" href="{{ url_for('doctor_block_dates') }}">{{ icon('ban', 15) }} Block dates</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

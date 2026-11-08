@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% from "_ui.html" import stat, service_chip, doctor_chip, person_chip, empty_state %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="hero">
+    <h1 class="page-title">{{ icon('layout', 24) }} Dashboard</h1>
+    <p>Welcome back, {{ session.name }}. Here is what is happening at the clinic.</p>
+</div>
+<div class="stats">
+    {{ stat('calendar', today_count, "Today's appointments", '', url_for('admin_appointments')) }}
+    {{ stat('clock', upcoming_count, 'Upcoming appointments') }}
+    {{ stat('calendar-check', total, 'Total appointments') }}
+    {{ stat('user-plus', pending_count, 'Pending doctor requests', 'amber' if pending_count else '', url_for('admin_requests')) }}
+    {{ stat('users', doctors, 'Doctors', '', url_for('admin_doctors')) }}
+    {{ stat('user', patients, 'Patients') }}
+</div>
+<div class="card">
+    <div class="card-head">
+        <h2>Upcoming appointments</h2>
+        <div class="actions">
+            <a class="btn small" href="{{ url_for('admin_new_appointment') }}">{{ icon('plus', 15) }} New</a>
+            <a class="btn small secondary" href="{{ url_for('admin_appointments') }}">View all {{ icon('arrow-right', 15) }}</a>
+        </div>
+    </div>
+    {% if upcoming %}
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Date/Time</th><th>Patient</th><th>Doctor</th><th>Service</th></tr></thead>
+            <tbody>
+                {% for r in upcoming %}
+                <tr>
+                    <td class="nowrap">{{ r.datetime_str|pretty_datetime }}</td>
+                    <td>{{ person_chip(r.patient_name) }}</td>
+                    <td>{{ doctor_chip(r.doctor) }}</td>
+                    <td>{{ service_chip(r.service) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        {{ empty_state('calendar', 'Nothing coming up', 'There are no upcoming appointments yet.', url_for('admin_new_appointment'), 'New appointment') }}
+    {% endif %}
+</div>
+{% endblock %}

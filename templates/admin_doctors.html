@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% from "_ui.html" import doctor_chip, service_chip, empty_state %}
+{% block title %}Doctors{% endblock %}
+{% block content %}
+<h1 class="page-title">{{ icon('users', 24) }} Doctors</h1>
+<div class="card">
+    {% if doctors %}
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Doctor</th><th>Username</th><th>Specializations</th></tr></thead>
+            <tbody>
+                {% for username, name, specializations, account_no in doctors %}
+                <tr>
+                    <td>{{ doctor_chip(name) }}</td>
+                    <td>{{ username }}</td>
+                    <td>{% for s in specializations.split(', ') if s %}{{ service_chip(s) }} {% endfor %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        {{ empty_state('users', 'No doctors yet', 'Approved doctors will be listed here.', url_for('admin_requests'), 'Review requests') }}
+    {% endif %}
+</div>
+{% endblock %}

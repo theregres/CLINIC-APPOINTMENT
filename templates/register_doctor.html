@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Doctor Registration{% endblock %}
+{% block content %}
+<div class="card auth-card" style="max-width:640px">
+    <div class="logo-badge">{% include "_logo.html" %}</div>
+    <h1>Doctor Registration</h1>
+    <p class="hint">Your account is created after an admin approves your registration.</p>
+    <form method="post" action="{{ url_for('register_doctor') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        {% include "_name_fields.html" %}
+        <div class="form-grid">
+            {% include "_account_fields.html" %}
+            <label>Specialization 1
+                <select name="specialization1" required>
+                    {% for service in services %}
+                    <option value="{{ service }}" {{ 'selected' if form.get('specialization1') == service }}>{{ service }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>Specialization 2 (optional)
+                <select name="specialization2">
+                    <option value="None">None</option>
+                    {% for service in services %}
+                    <option value="{{ service }}" {{ 'selected' if form.get('specialization2') == service }}>{{ service }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+        </div>
+        <div class="actions">
+            <button class="btn" type="submit">Register</button>
+            <a class="btn secondary" href="{{ url_for('login') }}">Back to Login</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

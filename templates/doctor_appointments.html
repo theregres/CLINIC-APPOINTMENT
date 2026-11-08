@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% from "_ui.html" import service_chip %}
+{% block title %}My Appointments{% endblock %}
+{% block content %}
+<h1 class="page-title">{{ icon('calendar-check', 24) }} My Appointments</h1>
+<div class="card">
+    <h2>My Profile</h2>
+    <dl class="profile">
+        <dt>Name</dt><dd>{{ session.name }}</dd>
+        <dt>Specialization</dt><dd>{% for s in specializations %}{{ service_chip(s) }} {% endfor %}</dd>
+    </dl>
+</div>
+<div class="card">
+    <div class="card-head"><h2>Appointments</h2><a class="btn small" href="{{ url_for('doctor_book') }}">{{ icon('plus-circle', 15) }} Book for patient</a></div>
+    {% include "_records_table.html" %}
+</div>
+{% endblock %}

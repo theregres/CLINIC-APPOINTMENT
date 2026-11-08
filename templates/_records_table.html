@@ -1,0 +1,26 @@
+{% from "_ui.html" import doctor_chip, person_chip, service_chip, status_chip, reason_line, row_actions, empty_state %}
+{% if records %}
+<div class="table-wrap">
+    <table>
+        <thead><tr><th>ID</th><th>Patient Name</th><th>Doctor</th><th>Service</th><th>Date/Time</th><th>Reason</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>
+            {% for record in records %}
+            <tr class="{{ 'row-dim' if record.status in ('cancelled', 'no_show') }}">
+                <td>{{ record.record_id }}</td>
+                <td>{{ person_chip(record.patient_name) }}</td>
+                <td>{{ doctor_chip(record.doctor) }}</td>
+                <td>{{ service_chip(record.service) }}</td>
+                <td class="nowrap">{{ record.datetime_str|pretty_datetime }}</td>
+                <td>{{ reason_line(record) }}</td>
+                <td>{{ status_chip(record) }}</td>
+                <td class="actions">{{ row_actions(record) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% elif session.role == 'patient' %}
+    {{ empty_state('calendar', 'No appointments yet', 'When you book a visit it will show up here.', url_for('patient_book'), 'Book an appointment') }}
+{% else %}
+    {{ empty_state('calendar', 'No appointments yet', 'Patients who book with you will appear here.') }}
+{% endif %}

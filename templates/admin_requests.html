@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% from "_ui.html" import person_chip, service_chip, empty_state %}
+{% block title %}Doctor Requests{% endblock %}
+{% block content %}
+<h1 class="page-title">{{ icon('user-plus', 24) }} Pending Doctor Registrations</h1>
+<div class="card">
+    {% if requests_list %}
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Username</th><th>Name</th><th>Specializations</th><th>Actions</th></tr></thead>
+            <tbody>
+                {% for item in requests_list %}
+                <tr>
+                    <td>{{ item.username }}</td>
+                    <td>{{ person_chip(item.name) }}</td>
+                    <td>{% for s in item.specializations.split(', ') %}{{ service_chip(s) }} {% endfor %}</td>
+                    <td class="actions">
+                        <form class="inline-form" method="post" action="{{ url_for('admin_approve_doctor') }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <input type="hidden" name="username" value="{{ item.username }}">
+                            <button class="btn small" type="submit">{{ icon('check', 14) }} Approve</button>
+                        </form>
+                        <form class="inline-form" method="post" action="{{ url_for('admin_reject_doctor') }}" onsubmit="return confirm('Reject this registration?')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <input type="hidden" name="username" value="{{ item.username }}">
+                            <button class="btn small danger" type="submit">{{ icon('x', 14) }} Reject</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    {{ empty_state('user-check', 'All caught up', 'There are no doctor registrations waiting for approval.') }}
+    {% endif %}
+</div>
+{% endblock %}

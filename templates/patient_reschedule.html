@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% import "_calendar.html" as cals with context %}
+{% from "_ui.html" import booking_steps, doctor_chip, person_chip, service_chip %}
+{% from "_booking.html" import slot_picker %}
+{% block title %}Reschedule Appointment{% endblock %}
+{% block content %}
+<h1 class="page-title">{{ icon('repeat', 24) }} Reschedule Appointment {{ record.record_id }}</h1>
+{{ booking_steps(3 if selected else 2) }}
+<div class="card">
+    <h2>Current appointment</h2>
+    <p>{% if for_doctor %}{{ person_chip(record.patient_name) }}{% else %}{{ doctor_chip(record.doctor) }}{% endif %} {{ service_chip(record.service) }} <span class="muted">{{ record.datetime_str|pretty_datetime }}</span></p>
+    <p class="hint">{% if for_doctor %}Rescheduling keeps the same patient and service. The patient is notified of the new time.{% else %}Rescheduling keeps the same doctor and service. To change those, cancel this appointment and book a new one.{% endif %}</p>
+    <a class="btn secondary" href="{{ back_url }}">{{ icon('chevron-left', 16) }} {{ back_label }}</a>
+</div>
+<div class="card">
+    <h2>Pick a new date and time</h2>
+    <div class="booking">
+        <div>
+            {{ cals.render(cal) }}
+            <div class="legend"><span class="l-free">Available</span><span class="l-selected">Selected</span><span class="l-off">Unavailable</span></div>
+        </div>
+        <div>
+            {% if selected %}
+                <h2>{{ icon('clock', 18) }} Times on {{ selected|pretty_date }}</h2>
+                <form method="post" action="{{ action_url }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="rid" value="{{ record.record_id }}">
+                    <input type="hidden" name="date" value="{{ selected }}">
+                    {{ slot_picker(slots, selected, [('Patient', record.patient_name ~ (' (' ~ account_id_for('patient', record.patient_name) ~ ')' if account_id_for('patient', record.patient_name) else '')), ('Service', record.service)] if for_doctor else [('Service', record.service), ('Doctor', record.doctor|doctor_label ~ (' (' ~ account_id_for('doctor', record.doctor) ~ ')' if account_id_for('doctor', record.doctor) else ''))], 'Confirm new time', record.reason) }}
+                </form>
+            {% else %}
+                <p class="muted">Pick a highlighted date on the calendar to see the available times.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

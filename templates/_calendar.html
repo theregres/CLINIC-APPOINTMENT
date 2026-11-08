@@ -1,0 +1,36 @@
+{% macro render(cal, mode='link', action='') %}
+<div class="calendar">
+    <div class="cal-nav">
+        {% if cal.prev_url %}<a class="btn small" href="{{ cal.prev_url }}" aria-label="Previous month">{{ icon('chevron-left', 16) }}</a>{% else %}<span class="btn small disabled">{{ icon('chevron-left', 16) }}</span>{% endif %}
+        <strong>{{ cal.label }}</strong>
+        <a class="btn small" href="{{ cal.next_url }}" aria-label="Next month">{{ icon('chevron-right', 16) }}</a>
+    </div>
+    <div class="cal-grid">
+        {% for name in ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'] %}<div class="cal-head">{{ name }}</div>{% endfor %}
+        {% for week in cal.weeks %}{% for cell in week %}
+            {% if cell is none %}
+                <div></div>
+            {% elif mode == 'link' %}
+                {% if cell.url %}
+                    <a class="day {{ cell.state }}" href="{{ cell.url }}">{{ cell.day }}</a>
+                {% else %}
+                    <span class="day {{ cell.state }}">{{ cell.day }}</span>
+                {% endif %}
+            {% else %}
+                {% if cell.clickable %}
+                    <form class="day-form" method="post" action="{{ action }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <input type="hidden" name="date" value="{{ cell.iso }}">
+                        <input type="hidden" name="action" value="{{ 'unblock' if cell.state == 'blocked' else 'block' }}">
+                        <input type="hidden" name="year" value="{{ cal.year }}">
+                        <input type="hidden" name="month" value="{{ cal.month }}">
+                        <button class="day {{ cell.state }}" type="submit" title="{{ 'Click to unblock' if cell.state == 'blocked' else 'Click to block' }}">{{ cell.day }}</button>
+                    </form>
+                {% else %}
+                    <span class="day {{ cell.state }}">{{ cell.day }}</span>
+                {% endif %}
+            {% endif %}
+        {% endfor %}{% endfor %}
+    </div>
+</div>
+{% endmacro %}

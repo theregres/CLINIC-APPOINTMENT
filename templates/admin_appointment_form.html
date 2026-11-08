@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% import "_calendar.html" as cals with context %}
+{% from "_ui.html" import booking_steps %}
+{% from "_booking.html" import slot_picker %}
+{% block title %}{{ 'Edit' if editing else 'New' }} Appointment{% endblock %}
+{% block content %}
+<h1 class="page-title">{{ icon('pencil' if editing else 'plus-circle', 24) }} {{ 'Edit Appointment ' ~ rid if editing else 'New Appointment' }}</h1>
+{{ booking_steps(3 if selected else 2) }}
+<div class="card">
+    <form method="get" action="{{ url_for(endpoint) }}">
+        {% if editing %}<input type="hidden" name="rid" value="{{ rid }}">{% endif %}
+        <div class="form-grid">
+            <label>Patient Name
+                <input type="text" name="patient_name" value="{{ patient_name }}" placeholder="Dela Cruz, Juan Santos Jr." required>
+            </label>
+            <label>Service
+                <select name="service" onchange="this.form.submit()">
+                    {% for item in services %}<option value="{{ item }}" {{ 'selected' if item == service }}>{{ item }}</option>{% endfor %}
+                </select>
+            </label>
+            <label>Doctor
+                <select name="doctor" onchange="this.form.submit()">
+                    <option value="">Auto-assign (best available)</option>
+                    {% for item in doctors %}<option value="{{ item }}" {{ 'selected' if item == doctor }}>{{ item }}{% if account_id_for('doctor', item) %} ({{ account_id_for('doctor', item) }}){% endif %}</option>{% endfor %}
+                </select>
+            </label>
+        </div>
+        <p class="hint">Patient name format: Last Name, First Name Middle Name Suffix (e.g. Dela Cruz, Juan Santos Jr.)</p>
+        <button class="btn" type="submit">{{ icon('search', 16) }} Show availability</button>
+    </form>
+</div>
+
+{% if editing and record %}
+<div class="card">
+    <h2>Current appointment</h2>
+    <p>{{ record.doctor }} &middot; {{ record.service }} &middot; {{ record.datetime_str|pretty_datetime }}</p>
+    <form method="post" action="{{ url_for(endpoint) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="rid" value="{{ rid }}">
+        <input type="hidden" name="keep_time" value="1">
+        <input type="hidden" name="patient_name" value="{{ patient_name }}">
+        <input type="hidden" name="service" value="{{ service }}">
+        <input type="hidden" name="doctor" value="{{ doctor }}">
+        <label class="reason-field">Reason for visit <span class="muted">(optional)</span>
+            <input type="text" name="reason" value="{{ reason }}" maxlength="300" placeholder="e.g. Persistent cough for two weeks">
+        </label>
+        <button class="btn secondary" type="submit">{{ icon('check', 16) }} Save changes and keep the current date and time</button>
+    </form>
+</div>
+{% endif %}
+
+<div class="card">
+    <h2>Pick a date and time</h2>
+    {% if not doctors %}
+        <p class="muted">No doctors have been approved yet. Approve a doctor under Doctor Requests first.</p>
+    {% else %}
+    <div class="booking">
+        <div>
+            {{ cals.render(cal) }}
+            <div class="legend"><span class="l-free">Available</span><span class="l-selected">Selected</span><span class="l-off">Unavailable</span></div>
+        </div>
+        <div>
+            {% if selected %}
+                <h2>{{ icon('clock', 18) }} Times on {{ selected|pretty_date }}</h2>
+                <form method="post" action="{{ url_for(endpoint) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    {% if editing %}<input type="hidden" name="rid" value="{{ rid }}">{% endif %}
+                    <input type="hidden" name="patient_name" value="{{ patient_name }}">
+                    <input type="hidden" name="service" value="{{ service }}">
+                    <input type="hidden" name="doctor" value="{{ doctor }}">
+                    <input type="hidden" name="date" value="{{ selected }}">
+                    {{ slot_picker(slots, selected, [('Patient', patient_name ~ (' (' ~ account_id_for('patient', patient_name) ~ ')' if account_id_for('patient', patient_name) else '')), ('Service', service), ('Doctor', (doctor|doctor_label ~ (' (' ~ account_id_for('doctor', doctor) ~ ')' if account_id_for('doctor', doctor) else '')) if doctor else 'Auto-assigned')], 'Save appointment' if editing else 'Create appointment', reason) }}
+                </form>
+            {% else %}
+                <p class="muted">Pick a highlighted date on the calendar to see the available times.</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

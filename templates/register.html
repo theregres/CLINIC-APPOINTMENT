@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Patient Registration{% endblock %}
+{% block content %}
+<div class="card auth-card" style="max-width:640px">
+    <div class="logo-badge">{% include "_logo.html" %}</div>
+    <h1>Patient Registration</h1>
+    <form method="post" action="{{ url_for('register') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        {% include "_name_fields.html" %}
+        <div class="form-grid">
+            {% include "_account_fields.html" %}
+        </div>
+        <div class="actions">
+            <button class="btn" type="submit">Register</button>
+            <a class="btn secondary" href="{{ url_for('login') }}">Back to Login</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

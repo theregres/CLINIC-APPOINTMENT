@@ -1,0 +1,78 @@
+{# Small shared UI pieces: import with  {% from "_ui.html" import doctor_chip, service_chip %} #}
+
+{% macro doctor_chip(name) %}
+{% set url = doctor_avatar_url(name) %}
+<span class="person nowrap">{% if url %}<img class="mini-avatar" src="{{ url }}" alt="">{% else %}<span class="mini-avatar">{{ (name or '?')[0]|upper }}</span>{% endif %}<span>{{ name|doctor_label }}</span>{% set no = account_id_for('doctor', name) %}{% if no %}<span class="acct-id">{{ no }}</span>{% endif %}</span>
+{% endmacro %}
+
+{% macro person_chip(name) %}
+<span class="person"><span class="mini-avatar neutral">{{ (name or '?')[0]|upper }}</span><span>{{ name }}</span>{% set no = account_id_for('patient', name) %}{% if no %}<span class="acct-id">{{ no }}</span>{% endif %}</span>
+{% endmacro %}
+
+{% macro service_chip(service) %}
+<span class="chip {{ service_class(service) }}">{{ icon(service_icon(service), 14) }}{{ service }}</span>
+{% endmacro %}
+
+{% macro status_chip(record) %}
+{% set info = status_info(record) %}
+<span class="chip {{ info[0] }}">{{ icon(info[2], 14) }}{{ info[1] }}</span>
+{% endmacro %}
+
+{% macro reason_line(record) %}
+{% if record.reason %}<span class="reason-line" title="{{ record.reason }}">{{ icon('message', 13) }}<span>{{ record.reason }}</span></span>{% else %}<span class="muted">&mdash;</span>{% endif %}
+{% endmacro %}
+
+{# One small icon button that POSTs a status change (or cancel) for an appointment. #}
+{% macro action_button(endpoint, record, status, ico, label, tone='secondary', confirm_msg='', nxt='') %}
+<form class="inline-form" method="post" action="{{ url_for(endpoint) }}"{% if confirm_msg %} onsubmit="return confirm('{{ confirm_msg }}')"{% endif %}>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="rid" value="{{ record.record_id }}">
+    {% if status %}<input type="hidden" name="status" value="{{ status }}">{% endif %}
+    {% if nxt %}<input type="hidden" name="next" value="{{ nxt }}">{% endif %}
+    <button class="btn small {{ tone }}" type="submit" title="{{ label }}" aria-label="{{ label }}">{{ icon(ico, 14) }}<span class="lbl"> {{ label }}</span></button>
+</form>
+{% endmacro %}
+
+{# The row actions that fit the signed-in role and the appointment's state. #}
+{% macro row_actions(record, nxt='') %}
+{% if session.role == 'patient' %}
+    {% if can_cancel(record) %}
+    <a class="btn small secondary" href="{{ url_for('patient_reschedule', rid=record.record_id) }}" title="Reschedule" aria-label="Reschedule">{{ icon('repeat', 14) }}<span class="lbl"> Reschedule</span></a>
+    {{ action_button('patient_cancel', record, '', 'x-circle', 'Cancel', 'danger', 'Cancel this appointment?') }}
+    {% endif %}
+{% elif session.role == 'doctor' %}
+    {% if can_mark_done(record) %}
+    {{ action_button('doctor_set_status', record, 'completed', 'check-circle', 'Complete', 'secondary', '', nxt) }}
+    {{ action_button('doctor_set_status', record, 'no_show', 'user-x', 'No-show', 'secondary', 'Mark this patient as a no-show?', nxt) }}
+    {% elif can_cancel(record) %}
+    <a class="btn small secondary" href="{{ url_for('doctor_reschedule', rid=record.record_id) }}" title="Reschedule" aria-label="Reschedule">{{ icon('repeat', 14) }}<span class="lbl"> Reschedule</span></a>
+    {{ action_button('doctor_set_status', record, 'cancelled', 'x-circle', 'Cancel', 'danger', 'Cancel this appointment? The patient will be notified.', nxt) }}
+    {% endif %}
+{% endif %}
+{% endmacro %}
+
+{% macro empty_state(ico, title, text='', url=None, label='') %}
+<div class="empty-state">
+    <div class="empty-icon">{{ icon(ico, 30) }}</div>
+    <h3>{{ title }}</h3>
+    {% if text %}<p>{{ text }}</p>{% endif %}
+    {% if url %}<a class="btn" href="{{ url }}">{{ icon('plus', 16) }} {{ label }}</a>{% endif %}
+</div>
+{% endmacro %}
+
+{% macro stat(ico, number, label, tone='', url=None) %}
+{% if url %}<a class="stat {{ tone }}" href="{{ url }}">{% else %}<div class="stat {{ tone }}">{% endif %}
+    <div class="stat-icon">{{ icon(ico, 22) }}</div>
+    <div><div class="stat-num">{{ number }}</div><div class="stat-label">{{ label }}</div></div>
+{% if url %}</a>{% else %}</div>{% endif %}
+{% endmacro %}
+
+{% macro booking_steps(current, labels=['Service', 'Date', 'Time', 'Confirm']) %}
+<ol class="steps">
+    {% for label in labels %}
+    <li class="step {{ 'done' if loop.index < current else ('current' if loop.index == current) }}">
+        <span class="n">{% if loop.index < current %}{{ icon('check', 13) }}{% else %}{{ loop.index }}{% endif %}</span>{{ label }}
+    </li>
+    {% endfor %}
+</ol>
+{% endmacro %}

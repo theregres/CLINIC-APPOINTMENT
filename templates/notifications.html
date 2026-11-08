@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% from "_ui.html" import empty_state %}
+{% block title %}Notifications{% endblock %}
+{% block content %}
+<h1 class="page-title">{{ icon('bell', 24) }} Notifications</h1>
+<div class="card">
+    {% if items %}
+    <div class="card-head">
+        <h2>{{ items|length }} recent</h2>
+        <form class="inline-form" method="post" action="{{ url_for('clear_notifications') }}" onsubmit="return confirm('Clear all notifications?')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button class="btn small secondary" type="submit">{{ icon('trash', 14) }} Clear all</button>
+        </form>
+    </div>
+    <ul class="notif-list">
+        {% for id, message, created, is_read in items %}
+        <li class="{{ '' if is_read else 'unread' }}">
+            <span class="notif-icon">{{ icon('bell', 16) }}</span>
+            <div><div class="notif-text">{{ message }}</div><div class="muted notif-time">{{ created }}{% if not is_read %} &middot; <strong>New</strong>{% endif %}</div></div>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+        {{ empty_state('bell', 'No notifications', 'You will be told here about new registrations and about appointments that are booked, rescheduled or cancelled.' if session.role == 'admin' else 'You will be told here when an appointment is booked, rescheduled or cancelled.') }}
+    {% endif %}
+</div>
+{% endblock %}

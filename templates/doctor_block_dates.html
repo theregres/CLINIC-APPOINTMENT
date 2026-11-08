@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% import "_calendar.html" as cals with context %}
+{% block title %}Block Dates{% endblock %}
+{% block content %}
+<h1 class="page-title">{{ icon('ban', 24) }} Block Unavailable Dates</h1>
+<div class="card">
+    <p class="hint">Click a date to block or unblock it. Red dates are unavailable to patients. A date that already has an appointment cannot be blocked.</p>
+    {{ cals.render(cal, mode='toggle', action=url_for('doctor_toggle_block')) }}
+    <div class="legend"><span class="l-free">Available</span><span class="l-blocked">Blocked</span><span class="l-off">Past</span></div>
+</div>
+<div class="card">
+    <h2>Blocked dates</h2>
+    {% if blocked %}
+        <p>{% for day in blocked %}{{ day.strftime('%b %d, %Y') }}{{ ', ' if not loop.last }}{% endfor %}</p>
+    {% else %}
+        <p class="muted">You have not blocked any upcoming dates.</p>
+    {% endif %}
+</div>
+{% endblock %}

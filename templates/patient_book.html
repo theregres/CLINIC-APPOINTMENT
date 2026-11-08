@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% import "_calendar.html" as cals with context %}
+{% from "_ui.html" import booking_steps %}
+{% from "_booking.html" import slot_picker %}
+{% block title %}Book Appointment{% endblock %}
+{% block content %}
+<h1 class="page-title">{{ icon('plus-circle', 24) }} Book New Appointment</h1>
+{{ booking_steps(3 if selected else 2) }}
+<div class="card">
+    <form method="get" action="{{ url_for('patient_book') }}">
+        <label style="max-width:320px">Service
+            <select name="service" onchange="this.form.submit()">
+                {% for item in services %}<option value="{{ item }}" {{ 'selected' if item == service }}>{{ item }}</option>{% endfor %}
+            </select>
+        </label>
+        <p class="hint">A doctor is assigned automatically based on the service and availability.</p>
+        <button class="btn" type="submit">{{ icon('search', 16) }} Show availability</button>
+    </form>
+</div>
+<div class="card">
+    <h2>Pick a date and time</h2>
+    {% if not has_doctors %}
+        <p class="muted">No doctors are available yet.</p>
+    {% else %}
+    <div class="booking">
+        <div>
+            {{ cals.render(cal) }}
+            <div class="legend"><span class="l-free">Available</span><span class="l-selected">Selected</span><span class="l-off">Unavailable</span></div>
+        </div>
+        <div>
+            {% if selected %}
+                <h2>{{ icon('clock', 18) }} Times on {{ selected|pretty_date }}</h2>
+                <form method="post" action="{{ url_for('patient_book') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="service" value="{{ service }}">
+                    <input type="hidden" name="date" value="{{ selected }}">
+                    {{ slot_picker(slots, selected, [('Patient', session.name ~ (' (' ~ my_id ~ ')' if my_id else '')), ('Service', service), ('Doctor', 'Assigned automatically')], 'Confirm booking') }}
+                </form>
+            {% else %}
+                <p class="muted">Pick a highlighted date on the calendar to see the available times.</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+<p class="hint">Name format: Last Name, First Name, Middle Name, Suffix (optional)<br>Example: Dela Cruz, Juan Santos Jr. Letters only, no numbers.</p>
+<div class="form-grid">
+    <label>Last Name
+        <input type="text" name="last" value="{{ form.get('last', '') }}" pattern="[A-Za-z\u00C0-\u024F][A-Za-z\u00C0-\u024F .'\-]*" title="Letters only, no numbers" required>
+    </label>
+    <label>First Name
+        <input type="text" name="first" value="{{ form.get('first', '') }}" pattern="[A-Za-z\u00C0-\u024F][A-Za-z\u00C0-\u024F .'\-]*" title="Letters only, no numbers" required>
+    </label>
+    <label>Middle Name
+        <input type="text" name="middle" value="{{ form.get('middle', '') }}" pattern="[A-Za-z\u00C0-\u024F][A-Za-z\u00C0-\u024F .'\-]*" title="Letters only, no numbers" required>
+    </label>
+    <label>Suffix (optional, e.g. Jr., Sr., III)
+        <input type="text" name="suffix" value="{{ form.get('suffix', '') }}" pattern="[A-Za-z\u00C0-\u024F][A-Za-z\u00C0-\u024F .'\-]*" title="Letters only, no numbers">
+    </label>
+</div>

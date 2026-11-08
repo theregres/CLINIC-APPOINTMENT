@@ -1,0 +1,64 @@
+{# Time slots grouped by morning/afternoon, with a summary + confirm button.
+   Place inside the <form> that holds the other hidden fields; it adds the "slot" field itself. #}
+{% macro slot_picker(slots, selected, rows, submit_label, reason='') %}
+{% set morning = slots|select('lt', '12:00')|list %}
+{% set afternoon = slots|select('ge', '12:00')|list %}
+<div class="slot-picker">
+    <input type="hidden" name="slot" value="" data-slot-input>
+    {% if not slots %}<p class="muted">No free times on this day. Please pick another date.</p>{% endif %}
+    {% for label, group, ico in (('Morning', morning, 'sun'), ('Afternoon', afternoon, 'moon')) %}
+        {% if group %}
+        <div class="slot-group">
+            <h3>{{ icon(ico, 14) }} {{ label }}</h3>
+            <div class="slots">
+                {% for slot in group %}<button class="slot" type="button" data-slot="{{ slot }}" data-label="{{ slot|time12 }}">{{ slot|time12 }}</button>{% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    {% endfor %}
+    {% if slots %}
+    <label class="reason-field">Reason for visit <span class="muted">(optional)</span>
+        <input type="text" name="reason" value="{{ reason }}" maxlength="300" placeholder="e.g. Persistent cough for two weeks" data-reason>
+    </label>
+    <p class="hint" data-pick-hint>Choose a time to continue.</p>
+    <div class="summary" data-summary hidden>
+        <h3>{{ icon('check-circle', 16) }} Please confirm</h3>
+        <dl class="summary-rows">
+            {% for k, v in rows %}<div><dt>{{ k }}</dt><dd>{{ v }}</dd></div>{% endfor %}
+            <div><dt>Date</dt><dd>{{ selected|pretty_date }}</dd></div>
+            <div><dt>Time</dt><dd data-summary-time></dd></div>
+            <div data-summary-reason-row hidden><dt>Reason</dt><dd data-summary-reason></dd></div>
+        </dl>
+    </div>
+    <button class="btn" type="submit" data-confirm disabled>{{ icon('check', 16) }} {{ submit_label }}</button>
+    {% endif %}
+</div>
+<script>
+(function () {
+    var root = document.querySelector('.slot-picker');
+    if (!root) { return; }
+    var input = root.querySelector('[data-slot-input]'), summary = root.querySelector('[data-summary]'),
+        timeLabel = root.querySelector('[data-summary-time]'), confirmBtn = root.querySelector('[data-confirm]'),
+        hint = root.querySelector('[data-pick-hint]'), reasonIn = root.querySelector('[data-reason]'),
+        reasonRow = root.querySelector('[data-summary-reason-row]'), reasonOut = root.querySelector('[data-summary-reason]'), steps = document.querySelectorAll('.steps .step');
+    function showReason() {
+        if (!reasonIn) { return; }
+        reasonOut.textContent = reasonIn.value.trim();
+        reasonRow.hidden = !reasonIn.value.trim();
+    }
+    if (reasonIn) { reasonIn.addEventListener('input', showReason); showReason(); }
+    root.querySelectorAll('.slot').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            root.querySelectorAll('.slot').forEach(function (b) { b.classList.remove('selected'); });
+            btn.classList.add('selected');
+            input.value = btn.dataset.slot;
+            timeLabel.textContent = btn.dataset.label;
+            summary.hidden = false;
+            if (hint) { hint.hidden = true; }
+            confirmBtn.disabled = false;
+            if (steps.length === 4) { steps[2].className = 'step done'; steps[2].querySelector('.n').textContent = '\u2713'; steps[3].className = 'step current'; }
+        });
+    });
+})();
+</script>
+{% endmacro %}

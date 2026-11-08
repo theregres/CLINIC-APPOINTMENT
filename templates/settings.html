@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<div class="page-narrow">
+<h1 class="page-title">{{ icon('sliders', 24) }} Settings</h1>
+<div class="card">
+    <h2>{{ icon('lock', 18) }} Change password</h2>
+    {% if session.role == 'admin' %}
+        <p class="muted">The admin password is managed in <code>credentials.env</code> (<code>ADMIN_PASSWORD</code>).</p>
+    {% else %}
+    <form method="post" action="{{ url_for('settings') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label>Current password
+            <input type="password" name="current_password" autocomplete="current-password" required>
+        </label>
+        <label>New password
+            <input type="password" name="new_password" autocomplete="new-password" data-pw-rules maxlength="12" pattern=".*[0-9].*" title="Up to 12 characters, with at least one number" required>
+            <span class="hint pw-hint" style="display:block;margin:4px 0 0;font-weight:400">Up to 12 characters, at least 1 number.</span>
+        </label>
+        <label>Confirm new password
+            <input type="password" name="confirm_password" autocomplete="new-password" maxlength="12" required>
+        </label>
+        <button class="btn" type="submit">Change password</button>
+    </form>
+    {% endif %}
+</div>
+</div>
+{% endblock %}

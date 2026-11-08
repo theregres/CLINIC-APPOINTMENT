@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}My Appointments{% endblock %}
+{% block content %}
+<h1 class="page-title">{{ icon('calendar-check', 24) }} My Appointments</h1>
+<div class="card">
+    {% include "_records_table.html" %}
+</div>
+{% endblock %}
