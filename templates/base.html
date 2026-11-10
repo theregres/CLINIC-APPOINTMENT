@@ -21,6 +21,7 @@
             {{ tab('admin_new_appointment', 'New Appointment', 'plus-circle') }}
             {{ tab('admin_requests', 'Doctor Requests', 'user-plus', pending_count) }}
             {{ tab('admin_doctors', 'Doctors', 'users') }}
+            {{ tab('admin_backups', 'Backups', 'database', also=('admin_backup_view', 'admin_backup_restore')) }}
         {% elif session.role == 'patient' %}
             {{ tab('patient_dashboard', 'Dashboard', 'layout') }}
             {{ tab('patient_book', 'Book Appointment', 'plus-circle') }}

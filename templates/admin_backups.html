@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% from "_ui.html" import empty_state %}
+{% block title %}Backups{% endblock %}
+{% block content %}
+<h1 class="page-title">{{ icon('database', 24) }} Database Backups</h1>
+<div class="card">
+    <div class="card-head">
+        <h2>{{ icon('shield', 18) }} Protect your data</h2>
+        <form method="post" action="{{ url_for('admin_backup_create') }}" class="inline-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button class="btn" type="submit">{{ icon('download', 16) }} Back up now</button>
+        </form>
+    </div>
+    <p class="hint">A backup is a full copy of everything in the system: accounts, appointments, schedules, notifications and profile pictures. If data is lost or damaged, restore a backup to bring it back.</p>
+    <dl class="profile">
+        <dt>Saved in</dt><dd>{{ store_label }}</dd>
+        <dt>Automatic backup</dt><dd>{% if auto_on %}Every {{ interval }} days ({{ keep_auto }} most recent are kept){% else %}<span class="muted">Turned off</span>{% endif %}</dd>
+        <dt>Last automatic</dt><dd>{% if last_auto %}{{ last_auto.created_at|backup_when }}{% else %}<span class="muted">None yet</span>{% endif %}</dd>
+        <dt>Next automatic</dt><dd>{% if not auto_on %}<span class="muted">&mdash;</span>{% elif due_now %}Within the hour, while the site is in use{% else %}{{ next_auto|backup_when }}{% endif %}</dd>
+    </dl>
+    {% if store_warning %}<div class="callout error" role="alert">{{ icon('alert-circle', 18) }}<span>{{ store_warning }}</span></div>{% endif %}
+    {% if list_error %}<div class="callout error" role="alert">{{ icon('alert-circle', 18) }}<span>The list of backups could not be loaded: {{ list_error }}</span></div>{% endif %}
+    {% if last_error %}<div class="callout error" role="alert">{{ icon('alert-circle', 18) }}<span>The last automatic backup failed: {{ last_error }}</span></div>{% endif %}
+</div>
+<div class="card">
+    <h2>Saved backups</h2>
+    {% if backups %}
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Date</th><th>Type</th><th>Contains</th><th>Size</th><th>Actions</th></tr></thead>
+            <tbody>
+                {% for b in backups %}
+                <tr>
+                    <td>{{ b.created_at|backup_when }}{% if b.created_by and b.kind != 'auto' %}<div class="muted small-text">by {{ b.created_by }}</div>{% endif %}</td>
+                    <td><span class="chip bk-{{ b.kind }}">{{ {'manual': 'Manual', 'auto': 'Automatic', 'pre-restore': 'Before a restore'}[b.kind] }}</span></td>
+                    <td>{% if b.broken %}<span class="muted">Damaged file</span>{% else %}{{ b|backup_label }}{% endif %}</td>
+                    <td>{{ b.size|human_size }}</td>
+                    <td class="bk-actions">
+                        {% if not b.broken %}
+                        <a class="btn small secondary" href="{{ url_for('admin_backup_view', file=b.name) }}">{{ icon('eye', 15) }} View</a>
+                        <a class="btn small secondary" href="{{ url_for('admin_backup_download', file=b.name) }}">{{ icon('download', 15) }} Download</a>
+                        <a class="btn small" href="{{ url_for('admin_backup_restore', file=b.name) }}">{{ icon('rotate-ccw', 15) }} Restore</a>
+                        {% endif %}
+                        <form method="post" action="{{ url_for('admin_backup_delete') }}" class="inline-form" onsubmit="return confirm('Delete this backup? This cannot be undone.');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <input type="hidden" name="file" value="{{ b.name }}">
+                            <button class="btn small danger" type="submit" title="Delete">{{ icon('trash', 15) }}</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        {{ empty_state('database', 'No backups yet', 'Press "Back up now" to save the first one.') }}
+    {% endif %}
+    <p class="hint">Backups contain sensitive data (including password hashes), so keep them private.
+        {% if store_label == 'Supabase Storage' %}They are kept in a private Supabase Storage bucket, separate from the database tables.{% else %}They are kept in the <code>backups</code> folder next to the app.{% endif %}
+        Download a copy now and then and store it somewhere else, such as a USB drive or cloud storage.</p>
+</div>
+{% endblock %}

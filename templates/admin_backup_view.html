@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}View Backup{% endblock %}
+{% block content %}
+<h1 class="page-title">{{ icon('eye', 24) }} Backup from {{ header.created_at }}</h1>
+<div class="card">
+    <p><span class="chip bk-{{ header.kind }}">{{ {'manual': 'Manual', 'auto': 'Automatic', 'pre-restore': 'Before a restore'}[header.kind] }}</span>
+       <span class="muted">{{ name }}</span></p>
+    <p class="hint">A read-only view. Password hashes and verification codes are hidden, and only the first {{ rows_shown }} rows of each table are shown here (the file itself holds everything).</p>
+    <a class="btn secondary" href="{{ url_for('admin_backups') }}">{{ icon('chevron-left', 16) }} Back to backups</a>
+    <a class="btn secondary" href="{{ url_for('admin_backup_download', file=name) }}">{{ icon('download', 16) }} Download</a>
+    <a class="btn" href="{{ url_for('admin_backup_restore', file=name) }}">{{ icon('rotate-ccw', 16) }} Restore this backup</a>
+</div>
+{% for t in tables %}
+<div class="card">
+    <details {{ 'open' if t.count and t.name in ('appointments', 'patients', 'doctors') }}>
+        <summary><strong>{{ t.name.replace('_', ' ')|capitalize }}</strong> <span class="muted">&middot; {{ t.count }} {{ 'row' if t.count == 1 else 'rows' }}</span></summary>
+        {% if t.rows %}
+        <div class="table-wrap">
+            <table>
+                <thead><tr>{% for c in t.columns %}<th>{{ c }}</th>{% endfor %}</tr></thead>
+                <tbody>
+                    {% for row in t.rows %}<tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>{% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if t.more %}<p class="hint">&hellip; and {{ t.more }} more {{ 'row' if t.more == 1 else 'rows' }} in the file.</p>{% endif %}
+        {% else %}<p class="muted">Empty.</p>{% endif %}
+    </details>
+</div>
+{% endfor %}
+{% endblock %}

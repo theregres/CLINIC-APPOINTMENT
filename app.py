@@ -9,6 +9,7 @@ from flask import Flask, Response, abort, flash, g, redirect, render_template, r
 from database import DataManager, DAY_NAMES, CODE_TTL_MINUTES
 from icons import icon, service_icon, service_class
 from mailer import send_verification_email, send_password_reset_email, send_appointment_email, MailError
+import backup
 from security import LoginLimiter, load_secret_key
 from models import (
     SERVICES, AVATAR_MAX_BYTES, InvalidInputError, DuplicateRecordError,
@@ -854,6 +855,135 @@ def admin_reject_doctor():
 @role_required("admin")
 def admin_doctors():
     return render_template("admin_doctors.html", doctors=manager.get_doctor_accounts())
+
+
+def backup_label(item):
+    """Plain-language summary of what a backup holds."""
+    counts = item["counts"]
+    accounts = sum(counts.get(t, 0) for t in ("admins", "doctors", "patients"))
+    return f"{accounts} accounts, {counts.get('appointments', 0)} appointments"
+
+
+def human_size(size):
+    for unit in ("B", "KB", "MB", "GB"):
+        if size < 1024 or unit == "GB":
+            return f"{size:.0f} {unit}" if unit == "B" else f"{size:.1f} {unit}"
+        size /= 1024
+
+
+app.jinja_env.filters["backup_label"] = backup_label
+app.jinja_env.filters["human_size"] = human_size
+app.jinja_env.filters["backup_when"] = lambda value: value.strftime("%b %d, %Y \u00b7 %I:%M %p").replace(" 0", " ")
+
+
+def backup_file_arg():
+    """The backup file named in the request, or None (and an error message) if it does not exist."""
+    name = (request.values.get("file") or "").strip()
+    try:
+        backup.load_backup(name)
+        return name
+    except backup.BackupError as e:
+        flash(str(e), "error")
+        return None
+
+
+@app.route("/admin/backups")
+@role_required("admin")
+def admin_backups():
+    try:
+        backups_found, error = backup.list_backups(), None
+    except backup.BackupError as e:
+        backups_found, error = [], str(e)
+    return render_template(
+        "admin_backups.html", backups=backups_found, interval=backup.INTERVAL_DAYS, list_error=error,
+        last_auto=backup.latest("auto", backups_found), next_auto=backup.next_automatic(backups_found),
+        last_error=backup.status["last_error"], keep_auto=backup.KEEP["auto"],
+        due_now=backup.next_automatic(backups_found) <= datetime.now(), auto_on=backup.auto_enabled(),
+        store_label=backup.get_store().label, store_warning=backup.storage_warning(),
+    )
+
+
+@app.before_request
+def backup_weekly_check():
+    """About once an hour, in the background, make the weekly automatic backup if it is due."""
+    if request.endpoint != "static":
+        backup.maybe_run_in_background()
+
+
+@app.route("/admin/backups/create", methods=["POST"])
+@role_required("admin")
+def admin_backup_create():
+    try:
+        name = backup.create_backup("manual", session["username"])
+        flash(f"Backup saved ({name}).", "success")
+    except Exception as e:
+        flash(f"The backup failed: {e}", "error")
+    return redirect(url_for("admin_backups"))
+
+
+@app.route("/admin/backups/view")
+@role_required("admin")
+def admin_backup_view():
+    name = backup_file_arg()
+    if name is None:
+        return redirect(url_for("admin_backups"))
+    header, tables = backup.load_backup(name)
+    return render_template("admin_backup_view.html", name=name, header=header, tables=backup.preview(tables), rows_shown=backup.PREVIEW_ROWS)
+
+
+@app.route("/admin/backups/download")
+@role_required("admin")
+def admin_backup_download():
+    name = backup_file_arg()
+    if name is None:
+        return redirect(url_for("admin_backups"))
+    return Response(backup.read_backup_file(name), mimetype="application/gzip",
+                    headers={"Content-Disposition": f'attachment; filename="{name}"'})
+
+
+@app.route("/admin/backups/delete", methods=["POST"])
+@role_required("admin")
+def admin_backup_delete():
+    try:
+        backup.delete_backup(request.form.get("file", ""))
+        flash("Backup deleted.", "success")
+    except backup.BackupError as e:
+        flash(str(e), "error")
+    return redirect(url_for("admin_backups"))
+
+
+@app.route("/admin/backups/restore", methods=["GET", "POST"])
+@role_required("admin")
+def admin_backup_restore():
+    name = backup_file_arg()
+    if name is None:
+        return redirect(url_for("admin_backups"))
+    if request.method == "POST":
+        login = manager.authenticate(session["username"], request.form.get("password", ""))
+        if not login or login["role"] != "admin" or login["username"] != session["username"]:
+            flash("Wrong password. Nothing was restored.", "error")
+        elif request.form.get("confirm", "").strip() != "RESTORE":
+            flash("Type RESTORE in capital letters to confirm. Nothing was restored.", "error")
+        else:
+            try:
+                result = backup.restore_backup(name, session["username"])
+            except backup.BackupError as e:
+                flash(str(e), "error")
+                return redirect(url_for("admin_backup_restore", file=name))
+            manager.load_from_file()
+            session.clear()
+            flash("Backup restored. Please sign in again." + (
+                f" A copy of the data from just before the restore was saved ({result['safety_copy']})." if result["safety_copy"] else ""
+            ), "success")
+            return redirect(url_for("login"))
+        return redirect(url_for("admin_backup_restore", file=name))
+    header, _ = backup.load_backup(name)
+    now, then = backup.current_counts(), header.get("counts", {})
+    groups = [("Accounts", ("admins", "doctors", "patients")), ("Doctor requests", ("doctor_requests",)),
+              ("Appointments", ("appointments",)), ("Notifications", ("notifications",)),
+              ("Profile pictures", ("profile_pictures",))]
+    rows = [(label, sum(now.get(t, 0) for t in tables), sum(then.get(t, 0) for t in tables)) for label, tables in groups]
+    return render_template("admin_backup_restore.html", name=name, header=header, rows=rows)
 
 
 @app.route("/patient/book", methods=["GET", "POST"])

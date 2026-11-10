@@ -334,3 +334,18 @@ body.role-doctor .hero, body.role-admin .hero {
 .acct-id { display: inline-block; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11.5px; font-weight: 600; letter-spacing: .03em; padding: 1px 7px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent); white-space: nowrap; vertical-align: middle; }
 .person .acct-id { margin-left: 2px; }
 .user-dropdown-head .acct-id { display: block; width: fit-content; margin: 3px 0; }
+
+/* Backups */
+.chip.bk-manual { background: #dbeafe; color: #1e40af; }
+.chip.bk-auto { background: #dcfce7; color: #166534; }
+.chip.bk-pre-restore { background: #fef3c7; color: #92400e; }
+td.bk-actions { white-space: nowrap; }
+td.bk-actions .btn.small { margin: 2px 2px 2px 0; }
+.small-text { font-size: 12px; }
+details > summary { cursor: pointer; padding: 2px 0; }
+details[open] > summary { margin-bottom: 10px; }
+.form-narrow { max-width: 360px; margin-top: 16px; }
+@media (max-width: 720px) { td.bk-actions { white-space: normal; } }
+.callout { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 10px; margin: 12px 0; font-size: 14px; line-height: 1.45; }
+.callout > svg { flex: none; margin-top: 2px; }
+.callout.error { background: #fee2e2; color: #7f1d1d; border: 1px solid #fecaca; }

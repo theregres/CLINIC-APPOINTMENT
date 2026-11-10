@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Restore Backup{% endblock %}
+{% block content %}
+<h1 class="page-title">{{ icon('rotate-ccw', 24) }} Restore Backup</h1>
+<div class="card">
+    <div class="callout error" role="alert">{{ icon('alert-circle', 18) }}<span><strong>This replaces all current data</strong> with the data saved in the backup from {{ header.created_at }}. Anything added or changed after that moment is lost. A safety copy of the current data is saved first, so you can undo this.</span></div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Data</th><th>Now</th><th>After restoring</th></tr></thead>
+            <tbody>
+                {% for label, current, saved in rows %}
+                <tr><td>{{ label }}</td><td>{{ current }}</td><td>{{ saved }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <form method="post" action="{{ url_for('admin_backup_restore') }}" class="form-narrow" autocomplete="off">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="file" value="{{ name }}">
+        <label>Your admin password
+            <input type="password" name="password" required autocomplete="current-password">
+        </label>
+        <label>Type <strong>RESTORE</strong> to confirm
+            <input type="text" name="confirm" required autocomplete="off" placeholder="RESTORE">
+        </label>
+        <button class="btn danger" type="submit">{{ icon('rotate-ccw', 16) }} Restore this backup</button>
+        <a class="btn secondary" href="{{ url_for('admin_backups') }}">Cancel</a>
+    </form>
+    <p class="hint">Everyone will be signed out after the restore, including you.</p>
+</div>
+{% endblock %}
