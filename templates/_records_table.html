@@ -1,4 +1,4 @@
-{% from "_ui.html" import doctor_chip, person_chip, service_chip, status_chip, reason_line, row_actions, empty_state %}
+{% from "_ui.html" import doctor_chip, person_chip, service_chip, status_chip, reason_line, row_actions, empty_state, pager %}
 {% if records %}
 <div class="table-wrap">
     <table>
@@ -19,6 +19,7 @@
         </tbody>
     </table>
 </div>
+{{ pager(page_info) }}
 {% elif session.role == 'patient' %}
     {{ empty_state('calendar', 'No appointments yet', 'When you book a visit it will show up here.', url_for('patient_book'), 'Book an appointment') }}
 {% else %}

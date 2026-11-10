@@ -76,3 +76,20 @@
     {% endfor %}
 </ol>
 {% endmacro %}
+
+{% macro pager(info) %}
+{% if info and info.pages > 1 %}
+<nav class="pager" aria-label="Pages">
+    <span class="pager-info">Showing {{ info.first }}&ndash;{{ info.last }} of {{ info.total }}</span>
+    <span class="pager-links">
+        {% if info.page > 1 %}<a class="pager-btn" href="{{ page_url(info.page - 1) }}" rel="prev">{{ icon('chevron-left', 15) }}<span class="lbl"> Prev</span></a>{% else %}<span class="pager-btn disabled">{{ icon('chevron-left', 15) }}<span class="lbl"> Prev</span></span>{% endif %}
+        {% for n in page_window(info.page, info.pages) %}
+            {% if n is none %}<span class="pager-gap">&hellip;</span>
+            {% elif n == info.page %}<span class="pager-btn current" aria-current="page">{{ n }}</span>
+            {% else %}<a class="pager-btn" href="{{ page_url(n) }}">{{ n }}</a>{% endif %}
+        {% endfor %}
+        {% if info.page < info.pages %}<a class="pager-btn" href="{{ page_url(info.page + 1) }}" rel="next"><span class="lbl">Next </span>{{ icon('chevron-right', 15) }}</a>{% else %}<span class="pager-btn disabled"><span class="lbl">Next </span>{{ icon('chevron-right', 15) }}</span>{% endif %}
+    </span>
+</nav>
+{% endif %}
+{% endmacro %}

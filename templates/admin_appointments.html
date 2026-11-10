@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_ui.html" import doctor_chip, person_chip, service_chip, status_chip, reason_line, action_button, empty_state %}
+{% from "_ui.html" import doctor_chip, person_chip, service_chip, status_chip, reason_line, action_button, empty_state, pager %}
 {% block title %}Appointments{% endblock %}
 {% macro sort_header(key, label) %}
 <th><a href="{{ url_for('admin_appointments', q=q, sort=key, dir=('desc' if sort == key and direction == 'asc' else 'asc')) }}">{{ label }}{% if sort == key %} {{ '&#9650;'|safe if direction == 'asc' else '&#9660;'|safe }}{% endif %}</a></th>
@@ -62,6 +62,7 @@
             </tbody>
         </table>
     </div>
+    {{ pager(page_info) }}
     {% else %}
     {% if q %}{{ empty_state('search', 'No matches', 'Nothing matched "' ~ q ~ '". Try a different search.') }}
     {% else %}{{ empty_state('calendar', 'No appointments yet', 'Create the first appointment to get started.', url_for('admin_new_appointment'), 'New appointment') }}{% endif %}

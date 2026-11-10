@@ -61,6 +61,47 @@ def account_id_for(role, name):
     return format_account_no(g.account_numbers[role].get(key if role == "doctor" else key.lower()))
 
 
+PER_PAGE = 10
+
+
+def paginate(items):
+    """The slice of `items` for the page in ?page=N (10 per page), plus what the pager needs."""
+    total = len(items)
+    pages = max(1, -(-total // PER_PAGE))
+    try:
+        page = int(request.args.get("page", 1))
+    except ValueError:
+        page = 1
+    page = min(max(page, 1), pages)
+    start = (page - 1) * PER_PAGE
+    info = {"page": page, "pages": pages, "total": total, "first": start + 1 if total else 0, "last": min(start + PER_PAGE, total)}
+    return items[start:start + PER_PAGE], info
+
+
+def page_url(number):
+    """Link to another page of the current list, keeping the search and sort."""
+    args = {key: value for key, value in request.args.items() if key != "page"}
+    if number > 1:
+        args["page"] = number
+    return url_for(request.endpoint, **args)
+
+
+def page_window(page, pages):
+    """Page numbers to show: the first, the last, and the ones around the current page (None = a gap)."""
+    wanted = sorted({1, pages, page - 1, page, page + 1} & set(range(1, pages + 1)))
+    shown, previous = [], 0
+    for number in wanted:
+        if previous and number - previous > 1:
+            shown.append(None)
+        shown.append(number)
+        previous = number
+    return shown
+
+
+app.jinja_env.globals["page_url"] = page_url
+app.jinja_env.globals["page_window"] = page_window
+
+
 def patient_options():
     """Patients prepared for the searchable dropdown (see templates/_combobox.html)."""
     return [{"u": username, "n": name, "id": format_account_no(no)} for username, name, no in manager.list_patients()]
@@ -691,7 +732,8 @@ def admin_appointments():
     if q:
         matching = {record.record_id for record in manager.search_records(q)}
         records = [record for record in records if record.record_id in matching]
-    return render_template("admin_appointments.html", records=records, q=q, sort=sort, direction=direction)
+    records, page_info = paginate(records)
+    return render_template("admin_appointments.html", records=records, q=q, sort=sort, direction=direction, page_info=page_info)
 
 
 def admin_appointment_page(editing):
@@ -1095,7 +1137,8 @@ def patient_cancel():
 @role_required("patient")
 def patient_appointments():
     records = manager.get_sorted_records(sort_by="date/time", patient_username=session["username"])
-    return render_template("patient_appointments.html", records=records)
+    records, page_info = paginate(records)
+    return render_template("patient_appointments.html", records=records, page_info=page_info)
 
 
 @app.route("/doctor/appointments")
@@ -1103,7 +1146,8 @@ def patient_appointments():
 def doctor_appointments():
     records = manager.get_sorted_records(sort_by="date/time", doctor_filter=session["name"])
     specializations = manager.get_doctor_specializations(session["username"])
-    return render_template("doctor_appointments.html", records=records, specializations=specializations)
+    records, page_info = paginate(records)
+    return render_template("doctor_appointments.html", records=records, specializations=specializations, page_info=page_info)
 
 
 @app.route("/doctor/appointments/status", methods=["POST"])
