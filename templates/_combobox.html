@@ -1,0 +1,20 @@
+{#- Searchable patient dropdown.
+    mode 'id'  : the visitor must pick a patient; the form field `field` receives the patient's username.
+    mode 'name': the text box itself is the form field (a name can also be typed, e.g. for a patient without an account).
+    `patients` is a list of {"u": username, "n": name, "id": "000-000"}. -#}
+{% macro patient_combobox(patients, label, field, value='', mode='name', submit_on_pick=False, placeholder='Search by name, username or ID') %}
+{% set cid = 'combo-' ~ field %}
+<label class="combo-wrap">{{ label }}
+    <div class="combo" id="{{ cid }}" data-mode="{{ mode }}" data-submit="{{ 1 if submit_on_pick else 0 }}">
+        <input type="text" class="combo-input" {% if mode == 'name' %}name="{{ field }}" required{% endif %} value="{{ value }}"
+               placeholder="{{ placeholder }}" autocomplete="off" role="combobox" aria-autocomplete="list"
+               aria-expanded="false" aria-controls="{{ cid }}-list">
+        {% if mode == 'id' %}<input type="hidden" class="combo-value" name="{{ field }}" value="">{% endif %}
+        <span class="combo-caret" aria-hidden="true">{{ icon('chevron-down', 16) }}</span>
+        <ul class="combo-list" id="{{ cid }}-list" role="listbox" hidden></ul>
+    </div>
+</label>
+<script type="application/json" id="{{ cid }}-data">{{ patients|tojson }}</script>
+{% endmacro %}
+
+{% macro combobox_script() %}<script src="{{ url_for('static', filename='combobox.js') }}" defer></script>{% endmacro %}

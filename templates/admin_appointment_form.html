@@ -2,6 +2,7 @@
 {% import "_calendar.html" as cals with context %}
 {% from "_ui.html" import booking_steps %}
 {% from "_booking.html" import slot_picker %}
+{% from "_combobox.html" import patient_combobox, combobox_script %}
 {% block title %}{{ 'Edit' if editing else 'New' }} Appointment{% endblock %}
 {% block content %}
 <h1 class="page-title">{{ icon('pencil' if editing else 'plus-circle', 24) }} {{ 'Edit Appointment ' ~ rid if editing else 'New Appointment' }}</h1>
@@ -10,9 +11,7 @@
     <form method="get" action="{{ url_for(endpoint) }}">
         {% if editing %}<input type="hidden" name="rid" value="{{ rid }}">{% endif %}
         <div class="form-grid">
-            <label>Patient Name
-                <input type="text" name="patient_name" value="{{ patient_name }}" placeholder="Dela Cruz, Juan Santos Jr." required>
-            </label>
+            {{ patient_combobox(patients, 'Patient', 'patient_name', patient_name, 'name', False, 'Search a patient, or type a full name') }}
             <label>Service
                 <select name="service" onchange="this.form.submit()">
                     {% for item in services %}<option value="{{ item }}" {{ 'selected' if item == service }}>{{ item }}</option>{% endfor %}
@@ -25,7 +24,7 @@
                 </select>
             </label>
         </div>
-        <p class="hint">Patient name format: Last Name, First Name Middle Name Suffix (e.g. Dela Cruz, Juan Santos Jr.)</p>
+        <p class="hint">Pick a patient from the list. For someone without an account, type their full name as: Last Name, First Name Middle Name Suffix (e.g. Dela Cruz, Juan Santos Jr.)</p>
         <button class="btn" type="submit">{{ icon('search', 16) }} Show availability</button>
     </form>
 </div>
@@ -78,4 +77,5 @@
     </div>
     {% endif %}
 </div>
+{{ combobox_script() }}
 {% endblock %}

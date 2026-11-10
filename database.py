@@ -938,6 +938,10 @@ class DataManager:
         rows = self._fetch("SELECT username, name, account_no FROM patients WHERE username = %s", (username,))
         return rows[0] if rows else None
 
+    def list_patients(self) -> list[tuple]:
+        """(username, name, account_no) of every patient, for the searchable patient dropdown."""
+        return self._fetch("SELECT username, name, account_no FROM patients ORDER BY name")
+
     def search_patients(self, query: str, limit: int = 20) -> list[tuple]:
         """Patients matching a name, username or account ID (e.g. 000-004). An empty query lists the first patients."""
         query = (query or "").strip()

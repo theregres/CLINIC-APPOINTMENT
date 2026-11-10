@@ -61,6 +61,11 @@ def account_id_for(role, name):
     return format_account_no(g.account_numbers[role].get(key if role == "doctor" else key.lower()))
 
 
+def patient_options():
+    """Patients prepared for the searchable dropdown (see templates/_combobox.html)."""
+    return [{"u": username, "n": name, "id": format_account_no(no)} for username, name, no in manager.list_patients()]
+
+
 app.jinja_env.filters["acct_no"] = format_account_no
 app.jinja_env.globals["account_id_for"] = account_id_for
 
@@ -762,7 +767,7 @@ def admin_appointment_page(editing):
     return render_template(
         "admin_appointment_form.html", editing=editing, rid=rid, record=record, endpoint=endpoint,
         patient_name=patient_name, service=service, doctor=doctor, doctors=doctors, services=SERVICES,
-        cal=cal, slots=slots, selected=selected, reason=record.reason if record else "",
+        patients=patient_options(), cal=cal, slots=slots, selected=selected, reason=record.reason if record else "",
     )
 
 
@@ -1164,12 +1169,11 @@ def doctor_book():
             flash(str(e), "error")
         return redirect(url_for("doctor_book", patient=patient[0] if patient else "", service=service))
 
-    query = request.args.get("q", "").strip()
     if patient is None:
-        return render_template("doctor_book.html", patient=None, results=manager.search_patients(query), query=query,
+        return render_template("doctor_book.html", patient=None, patients=patient_options(),
                                specializations=specializations, service=service, cal=None, slots=[], selected="")
     cal, slots, selected = booking_calendar("doctor_book", {"patient": patient[0], "service": service}, service, session["name"])
-    return render_template("doctor_book.html", patient=patient, results=[], query="", specializations=specializations,
+    return render_template("doctor_book.html", patient=patient, patients=[], specializations=specializations,
                            service=service, cal=cal, slots=slots, selected=selected)
 
 
