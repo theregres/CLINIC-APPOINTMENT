@@ -1021,6 +1021,7 @@ class DataManager:
 
     def load_from_file(self):
         # ENCAPSULATION: the in-memory data is private to DataManager.
+        # Big O: loading every row into the dict is O(n) time and O(n) memory.
         self._database = {}
         rows = self._fetch("SELECT id, patient_name, doctor, service, datetime_str, status, reason, patient_username FROM appointments")
         for row in rows:
@@ -1030,6 +1031,7 @@ class DataManager:
         # POLYMORPHISM: works with any kind of Record, not just Appointment.
         if not isinstance(record, Record):
             raise TypeError("Only Record instances can be added.")
+        # Big O: the duplicate check is a dict lookup, O(1) on average (the SQL insert depends on Postgres).
         if record.record_id in self._database:
             raise DuplicateRecordError(f"Appointment ID '{record.record_id}' already exists.")
         try:
@@ -1073,6 +1075,7 @@ class DataManager:
         appointment.patient_username = new_username
 
     def delete_record(self, record_id: str):
+        # Big O: dict lookup and delete are O(1) on average.
         if record_id in self._database:
             del self._database[record_id]
             self._execute("DELETE FROM appointments WHERE id = %s", (record_id,))
@@ -1080,6 +1083,7 @@ class DataManager:
             raise KeyError(f"Appointment ID '{record_id}' not found.")
 
     def search_records(self, keyword: str, patient_filter: str | None = None) -> list[Appointment]:
+        # Big O: linear search, O(n) - checks every appointment once (best case Omega(1), worst case O(n)).
         keyword = keyword.lower()
         results = []
         for appt in self._database.values():
@@ -1094,6 +1098,7 @@ class DataManager:
 
     def get_sorted_records(self, sort_by: str = "id", reverse: bool = False, patient_filter: str | None = None,
                            doctor_filter: str | None = None, patient_username: str | None = None) -> list[Appointment]:
+        # Big O: copying and filtering the list is O(n); sorted() (Timsort) is O(n log n), so the total is O(n log n).
         records = list(self._database.values())
         if patient_username:
             records = [r for r in records if r.patient_username == patient_username]

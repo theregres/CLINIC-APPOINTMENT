@@ -66,6 +66,7 @@ PER_PAGE = 10
 
 def paginate(items):
     """The slice of `items` for the page in ?page=N (10 per page), plus what the pager needs."""
+    # Big O: len() is O(1) and slicing a page of 10 is O(1) (a fixed size), so paging adds almost no cost.
     total = len(items)
     pages = max(1, -(-total // PER_PAGE))
     try:
@@ -88,6 +89,7 @@ def page_url(number):
 
 def page_window(page, pages):
     """Page numbers to show: the first, the last, and the ones around the current page (None = a gap)."""
+    # Big O: only about 5 numbers are sorted, so this is constant time, O(1).
     wanted = sorted({1, pages, page - 1, page, page + 1} & set(range(1, pages + 1)))
     shown, previous = [], 0
     for number in wanted:
