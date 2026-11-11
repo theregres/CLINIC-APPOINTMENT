@@ -26,3 +26,12 @@ Likely trick questions
 “What’s the free-plan limitation?” The Render site sleeps when idle, so the first load is slow. Open it a few minutes before presenting.
 
 If you want, I can write these as a one-page cheat sheet, or quiz you on them one at a time. Before the presentation, it’s worth double-checking the password-hashing answer in security.py. I can do that for you now if you’d like.
+
+Big O comments are in app.py and database.py:
+
+Appointments stored in a dict (_database): looking up, adding or deleting by ID is O(1) on average. Loading them all is O(n).
+Searching appointments (search_records): it checks every appointment once, so it’s O(n), a linear search.
+Sorting the appointment lists (get_sorted_records): filtering is O(n) and Python’s built-in sorted() is O(n log n), so O(n log n) overall.
+10 per page (paginate, page_window): taking a page is O(1), since a page is always 10 items.
+
+You can say that the system’s data structures and search have these costs. Don’t say you designed the system around Big O, because we didn’t. Binary search and other algorithms that need a sorted structure aren’t used anywhere.
