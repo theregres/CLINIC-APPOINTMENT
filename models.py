@@ -10,9 +10,11 @@ def clean_reason(value: str | None) -> str:
     return " ".join((value or "").split())[:REASON_MAX_LENGTH]
 NAME_CHARS = " .'-"
 
+# INHERITANCE: custom error inherits from Exception.
 class InvalidInputError(Exception):
     pass
 
+# INHERITANCE: custom error inherits from Exception.
 class DuplicateRecordError(Exception):
     pass
 

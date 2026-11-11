@@ -43,6 +43,7 @@ DATETIME_FORMAT = "%Y-%m-%d %H:%M"
 
 Query = LiteralString | bytes | sql.SQL | sql.Composed
 
+# ABSTRACTION: DataManager hides all the SQL behind simple methods (create_appointment, etc.).
 class DataManager:
     def __init__(self):
         self._connect()
@@ -243,6 +244,7 @@ class DataManager:
         if self._conn.closed:
             self._connect()
 
+    # ENCAPSULATION: private helper (leading underscore), used only inside this class.
     def _execute(self, query: Query, params: Params | None = None):
         self._ensure_connection()
         try:
@@ -253,6 +255,7 @@ class DataManager:
             with self._conn.cursor() as cursor:
                 cursor.execute(query, params)
 
+    # ENCAPSULATION: private helper (leading underscore), used only inside this class.
     def _fetch(self, query: Query, params: Params | None = None) -> list:
         self._ensure_connection()
         try:
@@ -1017,6 +1020,7 @@ class DataManager:
         self._conn.commit()
 
     def load_from_file(self):
+        # ENCAPSULATION: the in-memory data is private to DataManager.
         self._database = {}
         rows = self._fetch("SELECT id, patient_name, doctor, service, datetime_str, status, reason, patient_username FROM appointments")
         for row in rows:

@@ -10,6 +10,7 @@ LOCKOUT_SECONDS = 5 * 60     # how long the lock lasts
 WINDOW_SECONDS = 15 * 60     # failures older than this are forgotten
 
 
+# ENCAPSULATION: the failure counts and lock are private to this class; other code uses only its public methods.
 class LoginLimiter:
     """Counts failed logins per account and per IP address (kept in memory, thread-safe)."""
 

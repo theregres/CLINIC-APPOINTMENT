@@ -4,6 +4,7 @@ import ssl
 from email.message import EmailMessage
 
 
+# INHERITANCE: custom error inherits from Exception.
 class MailError(Exception):
     pass
 

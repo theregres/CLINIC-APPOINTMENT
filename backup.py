@@ -48,18 +48,22 @@ _last_check = [0.0]
 status = {"last_error": None}
 
 
+# INHERITANCE: custom error inherits from Exception.
 class BackupError(Exception):
     """A backup could not be made, read or restored."""
 
 
 # --------------------------------------------------------------------------------------------- where files live
 
+# POLYMORPHISM: LocalStore and SupabaseStore have the same methods (write, read, names, delete, meta),
+# so the backup code can use either one the same way.
 class LocalStore:
     label = "a folder on this server"
 
     def __init__(self, directory: str):
         self.directory = directory
 
+    # ENCAPSULATION: private helper used only inside this class.
     def _path(self, name: str) -> str:
         return os.path.join(self.directory, name)
 
@@ -100,12 +104,14 @@ class LocalStore:
             return None
 
 
+# POLYMORPHISM: same methods as LocalStore, different place to keep the files.
 class SupabaseStore:
     label = "Supabase Storage"
 
     def __init__(self, url: str, key: str, bucket: str):
         self.url, self.key, self.bucket = url.rstrip("/"), key, bucket
 
+    # ENCAPSULATION: private helper used only inside this class.
     def _call(self, method: str, path: str, body: bytes | None = None, content_type: str | None = None,
               extra: dict | None = None) -> bytes:
         headers = {"apikey": self.key, "Authorization": f"Bearer {self.key}"}
@@ -165,6 +171,7 @@ class SupabaseStore:
             return None
 
 
+# POLYMORPHISM: returns either store; the caller does not need to know which one it got.
 def get_store():
     """Supabase Storage when its settings are present, otherwise a local folder."""
     url = os.environ.get("SUPABASE_URL", "").strip()
