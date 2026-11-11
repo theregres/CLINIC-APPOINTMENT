@@ -79,11 +79,14 @@ def build_full_name(last: str, first: str, middle: str, suffix: str = "") -> str
     full_name = f"{last}, {first} {middle}"
     return f"{full_name} {suffix}" if suffix else full_name
 
+# ABSTRACTION: Record is an abstract class; it cannot be created directly.
 class Record(ABC):
     def __init__(self, record_id: str, patient_name: str):
+        # ENCAPSULATION: data is kept private (leading underscore).
         self._record_id = record_id
         self._patient_name = patient_name
 
+    # ENCAPSULATION: read-only access through a property.
     @property
     def record_id(self) -> str:
         return self._record_id
@@ -92,19 +95,23 @@ class Record(ABC):
     def patient_name(self) -> str:
         return self._patient_name
 
+    # ENCAPSULATION: setter validates the value before changing it.
     @patient_name.setter
     def patient_name(self, value: str):
         if not value.strip():
             raise InvalidInputError("Patient name cannot be empty.")
         self._patient_name = value
 
+    # ABSTRACTION: subclasses must provide their own to_dict().
     @abstractmethod
     def to_dict(self) -> dict:
         pass
 
+# INHERITANCE: Appointment inherits from Record.
 class Appointment(Record):
     def __init__(self, record_id: str, patient_name: str, doctor: str, service: str, datetime_str: str,
                  status: str = "scheduled", reason: str = "", patient_username: str | None = None):
+        # INHERITANCE: reuse the parent's constructor.
         super().__init__(record_id, patient_name)
         self.doctor = doctor
         self.service = service
@@ -113,6 +120,7 @@ class Appointment(Record):
         self.reason = reason or ""
         self.patient_username = patient_username
 
+    # POLYMORPHISM: overrides Record.to_dict() with its own version.
     def to_dict(self) -> dict:
         return {
             "id": self.record_id,

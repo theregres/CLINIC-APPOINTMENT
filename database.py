@@ -1023,6 +1023,7 @@ class DataManager:
             self._database[row[0]] = Appointment(*row)
 
     def add_record(self, record: Appointment):
+        # POLYMORPHISM: works with any kind of Record, not just Appointment.
         if not isinstance(record, Record):
             raise TypeError("Only Record instances can be added.")
         if record.record_id in self._database:
