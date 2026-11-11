@@ -1,5 +1,3 @@
-Here are the questions I’d expect, with short answers based on what the project actually does.
-
 How it works
 
 Why Flask and Supabase? Flask is a small Python web framework, and Supabase is a hosted Postgres database. That keeps the data safe and online, not in a local file.
