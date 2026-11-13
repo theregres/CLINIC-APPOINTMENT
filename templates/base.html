@@ -57,6 +57,9 @@
     {% endif %}
 </header>
 <main class="container">
+    {% if repaired_tables %}
+    <div class="callout error" role="alert">{{ icon('alert-circle', 18) }}<span><strong>Data was missing.</strong> The table{{ 's' if repaired_tables|length > 1 }} <strong>{{ repaired_tables|join(', ') }}</strong> had been deleted, so the system recreated {{ 'them' if repaired_tables|length > 1 else 'it' }} empty. Open <a href="{{ url_for('admin_backups') }}">Backups</a> and restore the latest backup to get the data back.</span></div>
+    {% endif %}
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% set flash_icons = {'success': 'check-circle', 'error': 'alert-circle', 'info': 'info'} %}
         {% for category, message in messages %}

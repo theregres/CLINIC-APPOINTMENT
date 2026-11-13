@@ -47,6 +47,20 @@ Query = LiteralString | bytes | sql.SQL | sql.Composed
 class DataManager:
     def __init__(self):
         self._connect()
+        self._healing = False
+        self.repair_notice: list[str] = []  # tables that had to be recreated empty (shown to the admin)
+        self._prepare_database()
+        self._database: dict[str, Appointment] = {}
+        self.load_from_file()
+
+    def _prepare_database(self):
+        """Create anything that is missing (tables, columns, indexes, the admin account). Safe to run again and again."""
+        # A table someone recreated by hand with the wrong columns (and no rows) is replaced by the correct one.
+        for _, table in ACCOUNT_TABLES:
+            if self._fetch("SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = %s", (table,)) \
+                    and not self._fetch("SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = %s AND column_name = 'username'", (table,)) \
+                    and not self._fetch(sql.SQL("SELECT 1 FROM {t} LIMIT 1").format(t=sql.Identifier(table))):
+                self._execute(sql.SQL("DROP TABLE {t}").format(t=sql.Identifier(table)))
         for role, table in ACCOUNT_TABLES:
             self._execute(
                 sql.SQL("""
@@ -213,8 +227,29 @@ class DataManager:
                 ),
                 (r"^[Dd][Rr]\.\s+", "dr.%"),
             )
-        self._database: dict[str, Appointment] = {}
-        self.load_from_file()
+
+    def _heal(self, force: bool = True):
+        """A table is missing (deleted by mistake or by an attacker): recreate the empty structure so the app and the admin login keep working."""
+        present = {row[0] for row in self._fetch("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")}
+        with_username = {row[0] for row in self._fetch("SELECT table_name FROM information_schema.columns WHERE table_schema = 'public' AND column_name = 'username'")}
+        missing = [table for table in ALL_TABLES if table not in present or (table in dict(ACCOUNT_TABLES).values() and table not in with_username)]
+        if not force and not missing:
+            return
+        self._healing = True
+        try:
+            self._prepare_database()
+        finally:
+            self._healing = False
+        for table in missing:
+            if table not in self.repair_notice:
+                self.repair_notice.append(table)
+
+    def repair_schema(self):
+        """Recreate any missing table now (used by the Backups pages, so a restore always has tables to fill)."""
+        self._heal(force=False)
+
+    def clear_repair_notice(self):
+        self.repair_notice.clear()
 
     def _seed_admin(self):
         username = os.environ.get("ADMIN_USERNAME", "").strip()
@@ -254,6 +289,12 @@ class DataManager:
             self._connect()
             with self._conn.cursor() as cursor:
                 cursor.execute(query, params)
+        except (psycopg.errors.UndefinedTable, psycopg.errors.UndefinedColumn):
+            if self._healing:
+                raise
+            self._heal()
+            with self._conn.cursor() as cursor:
+                cursor.execute(query, params)
 
     # ENCAPSULATION: private helper (leading underscore), used only inside this class.
     def _fetch(self, query: Query, params: Params | None = None) -> list:
@@ -264,6 +305,13 @@ class DataManager:
                 return cursor.fetchall()
         except psycopg.OperationalError:
             self._connect()
+            with self._conn.cursor() as cursor:
+                cursor.execute(query, params)
+                return cursor.fetchall()
+        except (psycopg.errors.UndefinedTable, psycopg.errors.UndefinedColumn):
+            if self._healing:
+                raise
+            self._heal()
             with self._conn.cursor() as cursor:
                 cursor.execute(query, params)
                 return cursor.fetchall()

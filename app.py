@@ -291,7 +291,9 @@ def inject_globals():
             my_id = format_account_no(manager.get_account_no(session["role"], session["username"]))
         except Exception:
             pass
-    return {"csrf_token": session["csrf_token"], "pending_count": pending, "unread_count": unread, "my_id": my_id}
+    repaired = list(manager.repair_notice) if session.get("role") == "admin" else []
+    return {"csrf_token": session["csrf_token"], "pending_count": pending, "unread_count": unread, "my_id": my_id,
+            "repaired_tables": repaired}
 
 
 @app.errorhandler(400)
@@ -939,6 +941,7 @@ def backup_file_arg():
 @app.route("/admin/backups")
 @role_required("admin")
 def admin_backups():
+    manager.repair_schema()
     try:
         backups_found, error = backup.list_backups(), None
     except backup.BackupError as e:
@@ -955,13 +958,15 @@ def admin_backups():
 @app.before_request
 def backup_weekly_check():
     """About once an hour, in the background, make the weekly automatic backup if it is due."""
-    if request.endpoint != "static":
+    # After a table had to be recreated the data is gone, so do not let an empty copy replace the good backups.
+    if request.endpoint != "static" and not manager.repair_notice:
         backup.maybe_run_in_background()
 
 
 @app.route("/admin/backups/create", methods=["POST"])
 @role_required("admin")
 def admin_backup_create():
+    manager.repair_schema()
     try:
         name = backup.create_backup("manual", session["username"])
         flash(f"Backup saved ({name}).", "success")
@@ -1004,6 +1009,7 @@ def admin_backup_delete():
 @app.route("/admin/backups/restore", methods=["GET", "POST"])
 @role_required("admin")
 def admin_backup_restore():
+    manager.repair_schema()  # a deleted table is recreated (empty) so the backup has somewhere to go
     name = backup_file_arg()
     if name is None:
         return redirect(url_for("admin_backups"))
@@ -1019,6 +1025,7 @@ def admin_backup_restore():
             except backup.BackupError as e:
                 flash(str(e), "error")
                 return redirect(url_for("admin_backup_restore", file=name))
+            manager.clear_repair_notice()
             manager.load_from_file()
             session.clear()
             flash("Backup restored. Please sign in again." + (
